@@ -1,4 +1,4 @@
-import pandas as pd
+import numpy as np
 import re
 from nltk.tokenize import word_tokenize
 
@@ -42,6 +42,33 @@ with open("filtered_jokes.txt", "r") as file:
     for j in the_jokes:
         split_jokes.append(word_tokenize(j))
         print(word_tokenize(j))
+
+def make_corpus(jokes):
+    corpus = {}
+    i = 0
+    for j in jokes:
+        for word in j:
+            if word not in corpus:
+                corpus[word] = i
+                i += 1
+
+    corpus['*PAD*'] = i
+    return corpus
+
+def encode(jokes, corpus):
+    encoded_jokes = []
+    max_len = max(list(map(len, jokes)))
+    for j in jokes:
+        encoded = []
+        i = 0
+        for word in j:
+            encoded.append(corpus[word])
+            i += 1
+        while i < max_len:
+            encoded.append(corpus['*PAD*'])
+        encoded_jokes.append(encoded)
+
+    return np.array(encoded_jokes)
 
 
 
