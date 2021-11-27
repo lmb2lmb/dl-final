@@ -26,7 +26,7 @@ from nltk.tokenize import word_tokenize
 #         file.write(j + "\n")
 
 ## strip punctuation
-## save ?, ..., *, -, :, " as separate words
+## save ?, ..., *, -, :, ", ., ! as separate words
 split_jokes = []
 with open("filtered_jokes.txt", "r") as file:
     the_jokes = file.read().splitlines()
