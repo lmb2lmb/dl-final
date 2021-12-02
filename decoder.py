@@ -3,6 +3,7 @@ import tensorflow as tf
 
 class Decoder(tf.keras.Model):
     def __init__(self, vocab_size, latent_size):
+        super().__init__()
         self.hidden_size = latent_size
         self.vocab_size = vocab_size
         self.gru1 = tf.keras.layers.GRU(self.hidden_size, activation = 'relu', return_sequences = True, return_state = True)

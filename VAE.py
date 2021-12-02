@@ -4,24 +4,28 @@ import decoder
 
 class VAE(tf.keras.Model):
     def __init__(self, window_size, vocab_size, latent_size):
+        super().__init__()
         self.window_size = window_size
         self.vocab_size = vocab_size
         self.batch_size = 100
-        self.hidden_dim = None
+        self.hidden_dim = 128
+        self.embedding_size = 64
         self.latent_size = latent_size
 
+        self.E = tf.Variable(tf.random.normal([self.vocab_size, self.embedding_size], stddev=.1))
 
-        self.transformer =  encoder.Transformer(self.window_size, self.vocab_size)
+        self.transformer = encoder.Transformer(self.window_size, self.vocab_size, self.embedding_size)
 
         self.encoder = tf.keras.Sequential()
         self.encoder.add(tf.keras.layers.Dense(self.hidden_dim, activation = 'relu'))
+     
         self.encoder.add(tf.keras.layers.Dense(self.hidden_dim, activation = 'relu'))
         self.encoder.add(tf.keras.layers.Dense(self.hidden_dim, activation = 'relu'))
 
         self.mu_layer = tf.keras.Sequential()
         self.mu_layer.add(tf.keras.layers.Dense(latent_size))
 
-        self.lagvar_layer = tf.keras.Sequential()
+        self.logvar_layer = tf.keras.Sequential()
         self.logvar_layer.add(tf.keras.layers.Dense(latent_size))
 
         self.decoder = decoder.Decoder(self.vocab_size, self.latent_size)
@@ -29,7 +33,9 @@ class VAE(tf.keras.Model):
 
 
     def call(self, inputs, inputs_forcing):
-        transformer_output = self.transformer.call(inputs)
+        t_inputs = tf.nn.embedding_lookup(self.E, inputs)
+
+        transformer_output = self.transformer.call(t_inputs)
         transformer_output = tf.reshape(transformer_output, [tf.shape(transformer_output)[0], -1])
 
         decoder_output = self.encoder(transformer_output)
@@ -40,7 +46,9 @@ class VAE(tf.keras.Model):
 
         latent_sample = reparametrize(mu, logvar)
 
-        reconstructed_sentances = self.decoder.call(inputs_forcing, latent_size)
+        inputs_forcing = tf.nn.embedding_lookup(self.E, inputs_forcing)
+
+        reconstructed_sentances = self.decoder.call(inputs_forcing, latent_sample)
 
         return reconstructed_sentances, mu, logvar
 

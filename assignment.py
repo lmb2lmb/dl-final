@@ -1,6 +1,9 @@
 import tensorflow as tf
 import encoder
 import decoder
+import preprocessing
+import VAE
+import numpy as np
 
 def train(model, sentences, padding_index):
     optimizer = tf.keras.optimizers.Adam()
@@ -23,7 +26,7 @@ def train(model, sentences, padding_index):
             probs, mu, logvar = model.call(batch_sentances, batch_sentances_forcing)
             loss = loss_function(probs, mu, logvar, batch_sentances, batch_mask)
         gradients = tape.gradient(loss, model.trainable_weights)
-		optimizer.apply_gradients(zip(gradients, model.trainable_weights))
+        optimizer.apply_gradients(zip(gradients, model.trainable_weights))
 
 
 
@@ -48,10 +51,21 @@ def loss_function(probs, mu, logvar, labels, mask):
     loss = recon_loss + KL
     return loss
 
-
-
-def generate_sentance(model, word_to_index_dict):
+def generate_sentences(model, word_to_index_dict, num_sentences):
     decoder = model.decoder
     size = model.hidden_size
     input = tf.random.normal(size)
     sequence = [word_to_index_dict["<START>"]]
+
+    return ""
+
+def main():
+    print('about to preprocess')
+    data, corpus, pad_token = preprocessing.preprocess()
+    print('done preproc')
+    num_sentences, len_sentence = np.shape(data)
+    m = VAE.VAE(len_sentence - 1, num_sentences, 32)
+    train(m, data, pad_token)
+    print(generate_sentences(m, corpus, 5))
+
+main()

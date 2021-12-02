@@ -3,10 +3,6 @@ import tensorflow as tf
 import numpy as np
 import math
 
-from attenvis import AttentionVis  
-av = AttentionVis()
-
-@av.att_mat_func
 def Attention_Matrix(K, Q, use_mask=False):
 	"""
 	STUDENT MUST WRITE:
@@ -91,36 +87,6 @@ class Atten_Head(tf.keras.layers.Layer):
 		attn = Attention_Matrix(K, Q, use_mask=self.use_mask)
 		return tf.matmul(attn, V)
 
-
-class Multi_Headed(tf.keras.layers.Layer):
-	def __init__(self, emb_sz, use_mask):
-		super(Multi_Headed, self).__init__()
-		
-		# TODO:
-		# Initialize heads
-
-	@tf.function
-	def call(self, inputs_for_keys, inputs_for_values, inputs_for_queries):
-		"""
-		FOR CS2470 STUDENTS:
-
-		This functions runs a multiheaded attention layer.
-
-		Requirements:
-			- Splits data for 3 different heads of size embed_sz/3
-			- Create three different attention heads
-			- Concatenate the outputs of these heads together
-			- Apply a linear layer
-
-		:param inputs_for_keys: tensor of [batch_size x [ENG/FRN]_WINDOW_SIZE x input_size ]
-		:param inputs_for_values: tensor of [batch_size x [ENG/FRN]_WINDOW_SIZE x input_size ]
-		:param inputs_for_queries: tensor of [batch_size x [ENG/FRN]_WINDOW_SIZE x input_size ]
-		:return: tensor of [BATCH_SIZE x (ENG/FRN)_WINDOW_SIZE x output_size ]
-		"""
-
-		return None
-
-
 class Feed_Forwards(tf.keras.layers.Layer):
 	def __init__(self, emb_sz):
 		super(Feed_Forwards, self).__init__()
@@ -183,8 +149,7 @@ class Transformer_Block(tf.keras.layers.Layer):
 			default=None, This is context from the encoder to be used as Keys and Values in self-attention function
 		"""
 
-		with av.trans_block(self.is_decoder):
-			atten_out = self.self_atten(inputs,inputs,inputs)
+		atten_out = self.self_atten(inputs,inputs,inputs)
 		atten_out+=inputs
 		atten_normalized = self.layer_norm(atten_out)
 
