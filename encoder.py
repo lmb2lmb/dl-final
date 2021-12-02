@@ -14,7 +14,6 @@ class Transformer(tf.keras.Model):
 
 		self.positional_encoding = transformer.Position_Encoding_Layer(self.window_size, self.embedding_size)
 		self.encoder = transformer.Transformer_Block(self.embedding_size, is_decoder=False)
-		self.dense = tf.keras.layers.Dense(self.vocab_size, activation='softmax')
 
 	@tf.function
 	def call(self, encoder_input):

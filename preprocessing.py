@@ -32,8 +32,10 @@ def proc():
         the_jokes = file.read().splitlines()
         for j in the_jokes:
             tokenized = re.findall("\w+\'+\w{1,2}|\"|\?|\:|\.{3}|-|\*|\.|\!|,|\w+", j.lower())
-            split_jokes.append(tokenized)
+            if len(tokenized) < 15:
+                split_jokes.append(tokenized)
 
+    print(len(split_jokes))
     return split_jokes
 
 ## alternatively
@@ -47,19 +49,24 @@ def proc():
 # returns corpus (dict) and id of padding token
 def make_corpus(jokes):
     corpus = {}
+    rev_corpus = {}
     i = 0
     for j in jokes:
         for word in j:
             if word not in corpus:
                 corpus[word] = i
+                rev_corpus[i] = word
                 i += 1
 
     # padding token is i
     corpus['*PAD*'] = i
+    rev_corpus[i] = '*PAD*'
     corpus['*START*'] = i+1
+    rev_corpus[i+1] = '*START*'
     corpus['*STOP*'] = i+2
+    rev_corpus[i+2] = '*STOP*'
 
-    return corpus, i
+    return corpus, i, rev_corpus
 
 def encode(jokes, corpus):
     encoded_jokes = []
@@ -81,11 +88,11 @@ def encode(jokes, corpus):
 def preprocess():
     split = proc()
     print('done split')
-    corpus, pad_token = make_corpus(split)
+    corpus, pad_token, rev_corpus = make_corpus(split)
     print('made corpus')
     encoded_jokes = encode(split, corpus)
     print('encoded')
-    return encoded_jokes, corpus, pad_token
+    return encoded_jokes, corpus, pad_token, rev_corpus
 
 
 
