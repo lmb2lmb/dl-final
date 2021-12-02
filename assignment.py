@@ -2,21 +2,20 @@ import tensorflow as tf
 import encoder
 import decoder
 
-
-def train(model, sentances, padding_index):
+def train(model, sentences, padding_index):
     optimizer = tf.keras.optimizers.Adam()
 
     batch_size = model.batch_size
-    sentances_to_encode = sentences[::, 1:]
+    sentences_to_encode = sentences[::, 1:]
     sentances_for_teacher_forcing = sentences[::, :-1]
-    mask = tf.not_equal(sentances_to_encode, padding_index)
+    mask = tf.not_equal(sentences_to_encode, padding_index)
     mask = tf.cast(mask, tf.float32)
 
 
-    total_batches = tf.shape(sentances)[0] // batch_size
+    total_batches = tf.shape(sentences)[0] // batch_size
 
     for i in range(total_batches):
-        batch_sentances = sentances_to_encode[i*batch_size: (i+1)*batch_size]
+        batch_sentances = sentences_to_encode[i*batch_size: (i+1)*batch_size]
         batch_sentances_forcing = sentances_for_teacher_forcing[i*batch_size: (i+1)*batch_size]
         batch_mask = mask[i*batch_size: (i+1)*batch_size]
 
@@ -44,7 +43,7 @@ def kl_div(mu, logvar):
 
 def loss_function(probs, mu, logvar, labels, mask):
     #average loss
-    recon_loss = reconstruction_loss(probs, label, mask)
+    recon_loss = reconstruction_loss(probs, labels, mask)
     KL = kl_div(mu, logvar)
     loss = recon_loss + KL
     return loss
