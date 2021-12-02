@@ -32,7 +32,7 @@ def proc():
         the_jokes = file.read().splitlines()
         for j in the_jokes:
             tokenized = re.findall("\w+\'+\w{1,2}|\"|\?|\:|\.{3}|-|\*|\.|\!|,|\w+", j.lower())
-            if len(tokenized) < 15:
+            if len(tokenized) < 20:
                 split_jokes.append(tokenized)
 
     print(len(split_jokes))
