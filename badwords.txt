@@ -385,3 +385,4 @@ black
 asian
 chinese
 japanese
+muslim
