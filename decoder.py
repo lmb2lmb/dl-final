@@ -19,8 +19,14 @@ class Decoder(tf.keras.Model):
         :param decoder_input: the latent z that comes from the encoder and reparameterization trick
         :param encoder_input: the input sentance word embeddings. Sentance "I like pie" will be "<START> I like"
         :return probs: tensor of shape [batch_size, sentance length, vocab_size]
+
         """
-        whole_seq_output_1, _ = self.gru1(encoder_input, initial_state = decoder_input)
+        z = tf.expand_dims(decoder_input, axis = 1)
+        z = tf.tile(z, [1,tf.shape(encoder_input)[1],1])
+
+        sequence = tf.concat([encoder_input, z], axis = -1)
+
+        whole_seq_output_1, _ = self.gru1(sequence)
 
         probs = self.dense(whole_seq_output_1)
 

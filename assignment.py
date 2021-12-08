@@ -65,10 +65,16 @@ def generate_sentences(model, word_to_index_dict, rev_word_to_index_dict, num_se
         input = tf.random.normal([1,size])
         sequence = [word_to_index_dict["*START*"]]
         i = 0
-        while not(sequence[-1] == word_to_index_dict["*STOP*"]) and i < 20:
+        while not(sequence[-1] == word_to_index_dict["*STOP*"]) and i < 12:
             input_seq = tf.reshape(sequence, [1,-1])
             input_seq = tf.nn.embedding_lookup(model.E, input_seq)
-            _, final_state = decoder.gru1(input_seq, initial_state = input)
+
+            input_reshape = tf.reshape(input, [1,1,-1])
+            input_reshape = tf.tile(input_reshape, [1,tf.shape(input_seq)[1],1])
+
+            input_seq = tf.concat([input_seq, input_reshape], axis = -1)
+
+            _, final_state = decoder.gru1(input_seq)
             probs = decoder.dense(final_state)
             probs = tf.reshape(probs, [-1])
             next_word = tf.argsort(probs)[-1].numpy()
@@ -90,7 +96,7 @@ def main():
     data, corpus, pad_token, rev_corpus = preprocessing.preprocess()
     print('done preproc')
     num_sentences, len_sentence = np.shape(data)
-    m = VAE.VAE(len_sentence - 1, num_sentences, 128)
+    m = VAE.VAE(len_sentence - 1, len(corpus), 128)
     train(m, data, pad_token, 5)
     print(generate_sentences(m, corpus, rev_corpus, 5))
 
