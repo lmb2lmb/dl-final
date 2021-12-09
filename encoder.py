@@ -17,11 +17,6 @@ class Transformer(tf.keras.Model):
 
 	@tf.function
 	def call(self, encoder_input):
-		"""
-		:param encoder_input: batched ids corresponding to french sentences
-		:param decoder_input: batched ids corresponding to english sentences
-		:return prbs: The 3d probabilities as a tensor, [batch_size x window_size x english_vocab_size]
-		"""
 	
 		embeddings = self.positional_encoding(encoder_input)
 		encoder_output = self.encoder(embeddings)

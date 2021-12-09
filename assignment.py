@@ -85,8 +85,12 @@ def joke_from_vector(vector, model, word_to_index_dict, rev_word_to_index_dict, 
         input_reshape = tf.tile(input_reshape, [1,tf.shape(input_seq)[1],1])
 
         input_seq = tf.concat([input_seq, input_reshape], axis = -1)
-        _, final_state, _ = decoder.lstm(input_seq)
-        probs = decoder.dense(final_state)
+        # _, final_state, _ = decoder.lstm(input_seq)
+        # probs = decoder.dense(final_state)
+
+        tr_output = decoder(model.encoder.positional_encoding(input_seq), context=model.encoder.positional_encoding(input_reshape))
+        probs = model.dense(tr_output)
+
         probs = tf.reshape(probs, [-1])
         final_three = tf.argsort(probs)[-3:].numpy()
         next_word = final_three[-1]
@@ -131,7 +135,7 @@ def main(epochs=1, length_cutoff=12, unk=False, unk_cutoff=1, sentences_to_gener
         data, corpus, pad_token, rev_corpus = preprocessing.preprocess(unk=unk, unk_cutoff=unk_cutoff, length_cutoff=length_cutoff, pre_corpus=news_corpus, pre_rev_corpus=news_rev_corpus)
         _, len_sentence = np.shape(news)
         news_m = VAE.VAE(len_sentence - 1, len(corpus), latent_size=128, hidden_dim=128)
-        train(news_m, news, news_pad_token, 1)
+        train(news_m, news, news_pad_token, 2)
         embeddings = news_m.E
     else:
         data, corpus, pad_token, rev_corpus = preprocessing.preprocess(unk=unk, unk_cutoff=unk_cutoff, length_cutoff=length_cutoff)
@@ -174,7 +178,7 @@ LATENT_SIZE = 150
 USE_NEWS = True
 
 #max length of articles in words for news
-NEWS_CUTOFF = 20
+NEWS_CUTOFF = 40
 
 main(epochs=EPOCHS, 
     length_cutoff=LENGTH_CUTOFF, 

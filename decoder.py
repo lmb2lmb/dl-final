@@ -1,6 +1,5 @@
 import tensorflow as tf
 
-
 class Decoder(tf.keras.Model):
     def __init__(self, vocab_size, latent_size):
         super().__init__()

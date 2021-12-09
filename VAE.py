@@ -1,6 +1,7 @@
 import tensorflow as tf
 import encoder
 import decoder
+import transformer_decoder
 
 class VAE(tf.keras.Model):
     def __init__(self, window_size, vocab_size, latent_size, has_preloaded=False, preloaded_embeddings=None, hidden_dim=256):
@@ -17,8 +18,6 @@ class VAE(tf.keras.Model):
         else:
             self.E = tf.Variable(tf.random.normal([self.vocab_size, self.embedding_size], stddev=.1))
         
-            
-
         self.transformer = encoder.Transformer(self.window_size, self.vocab_size, self.embedding_size)
 
         self.encoder = tf.keras.Sequential()
@@ -32,7 +31,13 @@ class VAE(tf.keras.Model):
         self.logvar_layer = tf.keras.Sequential()
         self.logvar_layer.add(tf.keras.layers.Dense(latent_size))
 
-        self.decoder = decoder.Decoder(self.vocab_size, self.latent_size)
+        #self.decoder = decoder.Decoder(self.vocab_size, self.latent_size)
+
+        self.decoder = transformer_decoder.Transformer(self.window_size, self.vocab_size, self.embedding_size)
+        self.dense = tf.keras.Sequential()
+        self.dense.add(tf.keras.layers.Dense(self.hidden_size, activation = 'relu'))
+        self.dense.add(tf.keras.layers.Dense(self.hidden_size, activation = 'relu'))
+        self.dense.add(tf.keras.layers.Dense(self.vocab_size, activation = 'softmax'))
 
     def call(self, inputs, inputs_forcing):
         t_inputs = tf.nn.embedding_lookup(self.E, inputs)
@@ -51,7 +56,8 @@ class VAE(tf.keras.Model):
 
         inputs_forcing = tf.nn.embedding_lookup(self.E, inputs_forcing)
 
-        reconstructed_sentances = self.decoder(inputs_forcing, latent_sample)
+        #reconstructed_sentances = self.decoder(inputs_forcing, latent_sample)
+        reconstructed_sentances = self.dense(self.decoder(self.transformer.positional_encoding(inputs_forcing), self.transformer.positional_encoding(latent_sample)))
 
         return reconstructed_sentances, mu, logvar
 
