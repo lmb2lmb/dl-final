@@ -3,16 +3,21 @@ import encoder
 import decoder
 
 class VAE(tf.keras.Model):
-    def __init__(self, window_size, vocab_size, latent_size):
+    def __init__(self, window_size, vocab_size, latent_size, has_preloaded=False, preloaded_embeddings=None, hidden_dim=256):
         super().__init__()
         self.window_size = window_size
         self.vocab_size = vocab_size
         self.batch_size = 100
-        self.hidden_dim = 256
+        self.hidden_dim = hidden_dim
         self.embedding_size = 128
         self.latent_size = latent_size
 
-        self.E = tf.Variable(tf.random.normal([self.vocab_size, self.embedding_size], stddev=.1))
+        if has_preloaded:
+            self.E = tf.Variable(preloaded_embeddings)
+        else:
+            self.E = tf.Variable(tf.random.normal([self.vocab_size, self.embedding_size], stddev=.1))
+        
+            
 
         self.transformer = encoder.Transformer(self.window_size, self.vocab_size, self.embedding_size)
 

@@ -386,3 +386,4 @@ asian
 chinese
 japanese
 muslim
+tampon

@@ -1,9 +1,8 @@
 import tensorflow as tf
-import encoder
-import decoder
 import preprocessing
 import VAE
 import numpy as np
+from news_preproc import news_preprocess
 
 def train(model, sentences, padding_index, num_epochs):
     optimizer = tf.keras.optimizers.Adam()
@@ -18,6 +17,8 @@ def train(model, sentences, padding_index, num_epochs):
     for j in range(num_epochs):
         sum_loss = 0
         for i in range(total_batches):
+            if i % 100 == 0:
+                print(i)
             batch_sentances = sentences_to_encode[i*batch_size: (i+1)*batch_size]
             batch_sentances_forcing = sentances_for_teacher_forcing[i*batch_size: (i+1)*batch_size]
             batch_mask = mask[i*batch_size: (i+1)*batch_size]
@@ -39,7 +40,6 @@ def reconstruction_loss(probs, sentances, mask):
     loss = loss * mask
     loss = tf.reduce_sum(loss) / tf.cast(total_labels, tf.float32)
     return loss
-
 
 def kl_div(mu, logvar):
     #Returns average KL divergence over batch
@@ -113,16 +113,31 @@ def joke_from_vector(vector, model, word_to_index_dict, rev_word_to_index_dict, 
 def make_coherent_sentence(sequence):
     string_sentence = ""
     for token in sequence:
-        if token != '*START*' | '*STOP*' | '*PAD*' | '*UNK*':
-            string_sentence.append(token)
-            string_sentence.append(' ')
+        if token != '*START*' and token != '*STOP*' and token != '*PAD*' and token != '*UNK*':
+            string_sentence += token
+            string_sentence += ' '
 
     return string_sentence
 
-def main(epochs=1, length_cutoff=12, unk=False, unk_cutoff=1, sentences_to_generate=10, latent_size=128):
-    data, corpus, pad_token, rev_corpus = preprocessing.preprocess(unk=unk, unk_cutoff=unk_cutoff, length_cutoff=length_cutoff)
+def main(epochs=1, length_cutoff=12, unk=False, unk_cutoff=1, sentences_to_generate=10, latent_size=128, use_news=False, news_len_cutoff=100):
+    embeddings = None
+    corpus = None
+    rev_corpus = None
+    pad_token = None
+    data = None
+
+    if use_news:
+        news, news_corpus, news_pad_token,news_rev_corpus = news_preprocess(unk=unk, unk_cutoff=unk_cutoff, length_cutoff=news_len_cutoff)
+        data, corpus, pad_token, rev_corpus = preprocessing.preprocess(unk=unk, unk_cutoff=unk_cutoff, length_cutoff=length_cutoff, pre_corpus=news_corpus, pre_rev_corpus=news_rev_corpus)
+        _, len_sentence = np.shape(news)
+        news_m = VAE.VAE(len_sentence - 1, len(corpus), latent_size=128, hidden_dim=128)
+        train(news_m, news, news_pad_token, 1)
+        embeddings = news_m.E
+    else:
+        data, corpus, pad_token, rev_corpus = preprocessing.preprocess(unk=unk, unk_cutoff=unk_cutoff, length_cutoff=length_cutoff)
+
     _, len_sentence = np.shape(data)
-    m = VAE.VAE(len_sentence - 1, len(corpus), latent_size)
+    m = VAE.VAE(len_sentence - 1, len(corpus), latent_size, has_preloaded=True, preloaded_embeddings=embeddings)
     train(m, data, pad_token, epochs)
 
     # ones = tf.ones([1, latent_size])
@@ -135,18 +150,39 @@ def main(epochs=1, length_cutoff=12, unk=False, unk_cutoff=1, sentences_to_gener
         print(make_coherent_sentence(s))
 
 # PARAMETERS
-EPOCHS = 1
-LENGTH_CUTOFF = 12
+
+# number of training epochs
+EPOCHS = 15
+
+# max length of input joke (tokens)
+LENGTH_CUTOFF = 15
+
+# whether to mark uncommon words as unknown
 UNK = True
-UNK_CUTOFF = 3
-SENTENCES_TO_GENERATE= 10
-LATENT_SIZE = 128
+
+# number of occurences in the data at or under which a word will be marked as unknown 
+# if UNK = True
+UNK_CUTOFF = 5
+
+# number of output sentences to generate
+SENTENCES_TO_GENERATE = 50
+
+# latent vector size
+LATENT_SIZE = 150
+
+#whether to pretrain embeddings with news dataset
+USE_NEWS = True
+
+#max length of articles in words for news
+NEWS_CUTOFF = 20
 
 main(epochs=EPOCHS, 
     length_cutoff=LENGTH_CUTOFF, 
     unk=UNK, 
     unk_cutoff=UNK_CUTOFF, 
     sentences_to_generate=SENTENCES_TO_GENERATE, 
-    latent_size=LATENT_SIZE)
+    latent_size=LATENT_SIZE,
+    use_news=USE_NEWS, 
+    news_len_cutoff=NEWS_CUTOFF)
 
 
